@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="ivy-tasks">
+
+	<!-- this targets should be importet by main ant build file -->
+
+
+
+	<target name="retrieve" 
+		description=" ---> Retrieve dependencies to ${lib.dir}">
+		
+		<ivy:retrieve pattern="${lib.dir}/[module]-[type]-[artifact]-[revision].[ext]" />
+	</target>
+
+	<target name="resolve" 
+		description=" ---> Resolve dependencies to local cache">
+
+		<ivy:resolve />
+	</target>
+	
+	<target name="report" depends="resolve">
+		<ivy:report todir="${build.dir}" />
+	</target>
+
+
+</project>

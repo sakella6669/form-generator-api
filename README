@@ -1,0 +1,9 @@
+Overview
+
+This API is used for generating different style forms.
+
+API is flexible enough to accommodate to different ways of filling API form classes.
+You could read data from configuration or from database, and then map them to API
+classes.
+
+Default implementation of form generator is for JSP non-document style forms.
