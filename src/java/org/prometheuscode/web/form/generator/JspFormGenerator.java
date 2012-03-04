@@ -38,30 +38,35 @@ import org.prometheuscode.web.form.utils.TagUtils;
  */
 public class JspFormGenerator implements IFormGenerator {
 
-    private FormConfig formPresentationConfig;
+    private FormConfig formConfig;
 
     public JspFormGenerator() {
     }
 
     /**
      * Set form config.
+     * 
      * @return
      */
     public FormConfig getFormConfig() {
-	return this.formPresentationConfig;
+	return this.formConfig;
     }
 
     /**
      * Get form config.
+     * 
      * @param config
      */
     public void setFormConfig(FormConfig config) {
-	this.formPresentationConfig = config;
+	this.formConfig = config;
     }
 
     @Override
     public String generateForm(IForm form) {
-	StringBuffer result = new StringBuffer();
+	if (form == null) {
+	    throw new IllegalArgumentException("Form can not be null");
+	}
+	StringBuilder result = new StringBuilder();
 
 	result.append(TagUtils.createStartTag("form", form.getAttributes()));
 	result.append("\n"); /* to look readable */
@@ -69,42 +74,29 @@ public class JspFormGenerator implements IFormGenerator {
 	this.createFormComponents(form, result);
 
 	result.append("\n");
-
-	Map<String, String> tmpAttr = new HashMap<String, String>();
-
-	tmpAttr.put("type", "submit");
-	tmpAttr.put("value", this.formPresentationConfig
-		.getAttribute(FormConfig.ATTR_SUBMIT_LABEL));
-	result.append(TagUtils.createTag("input", tmpAttr, ""));
-
 	result.append(TagUtils.createEndTag("form"));
 
 	return result.toString();
     }
 
     /*
-     * Creates form components.
+     * Create form components.
      */
-    private void createFormComponents(IForm form, StringBuffer buf) {
+    private void createFormComponents(IForm form, StringBuilder buf) {
 	List<IFormComponent> components = form.getFormComponents();
 
 	for (IFormComponent comp : components) {
 	    buf.append(TagUtils.createSimpleOpenTag("div", "class",
-		    this.formPresentationConfig
-			    .getAttribute(FormConfig.ATTR_COMPONENT_CLASS)));
+		    this.formConfig.getAttribute(FormConfig.ATTR_COMPONENT_CLASS)));
 	    buf.append("\n");
 
 	    /*
-	     * header can be a question for example
+	     * header can be a question for example.
 	     */
 	    String header = comp.getHeader();
-	    buf.append(TagUtils
-		    .createSimpleTag(
-			    "div",
-			    "class",
-			    this.formPresentationConfig
-				    .getAttribute(FormConfig.ATTR_HEADER_CLASS),
-			    header));
+	    buf.append(TagUtils.createSimpleTag("div", "class",
+		    this.formConfig.getAttribute(FormConfig.ATTR_HEADER_CLASS),
+		    header));
 
 	    this.createComponentElements(comp, buf);
 
@@ -116,13 +108,14 @@ public class JspFormGenerator implements IFormGenerator {
      * Create component elements.
      */
     private void createComponentElements(IFormComponent component,
-	    StringBuffer buf) {
+	    StringBuilder buf) {
 	List<IFormElement> elements = component.getElements();
 	buf.append("\n"); /* to look readable */
 	for (IFormElement elem : elements) {
-	    buf.append(TagUtils.createSimpleOpenTag("div", "class",
-		    this.formPresentationConfig.getAttribute(FormConfig.ATTR_ELEMENT_CLASS)));
-	    
+	    buf.append(TagUtils
+		    .createSimpleOpenTag("div", "class", this.formConfig
+			    .getAttribute(FormConfig.ATTR_ELEMENT_CLASS)));
+
 	    this.createTag(elem, buf);
 
 	    buf.append("\n"); /* to look readable */
@@ -134,7 +127,7 @@ public class JspFormGenerator implements IFormGenerator {
     /*
      * Helper function to a create tag.
      */
-    private void createTag(IFormElement element, StringBuffer buf) {
+    private void createTag(IFormElement element, StringBuilder buf) {
 
 	String elemName = element.getName();
 	if (elemName.equals("input")) {
@@ -151,16 +144,16 @@ public class JspFormGenerator implements IFormGenerator {
     /*
      * Create input element of form.
      */
-    private void createInputTag(IFormElement element, StringBuffer buf) {
+    private void createInputTag(IFormElement element, StringBuilder buf) {
 	String label = element.getLabel();
 	String name = element.getName();
 	String elemAttrName = element.getAttribute(FormElement.NAME_ATTR_NAME);
 	String elemAttrType = element.getAttribute(FormElement.TYPE_ATTR_NAME);
 
 	Map<String, String> attrs = element.getAttributes();
-	String valueVar = this.getElVar(this.formPresentationConfig
-		.getAttribute(FormConfig.ATTR_VALUES_MAP_VAR_NAME),
-		elemAttrName);
+	String vName = this.formConfig
+		.getAttribute(FormConfig.ATTR_VALUES_MAP_VAR_NAME);
+	String valueVar = this.getElVar(vName, elemAttrName);
 
 	if (!(elemAttrType.equals("radio"))
 		&& !(elemAttrType.equals("checkbox"))) {
@@ -173,19 +166,18 @@ public class JspFormGenerator implements IFormGenerator {
 
 	    buf.append(TagUtils.createTag(name, attrs, "") + "\n");
 
-	    String errorVar = this.getElVar(this.formPresentationConfig
-		    .getAttribute(FormConfig.ATTR_ERRORS_MAP_VAR_NAME),
-		    elemAttrName);
+	    String eName = this.formConfig
+		    .getAttribute(FormConfig.ATTR_ERRORS_MAP_VAR_NAME);
+	    String errorVar = this.getElVar(eName, elemAttrName);
+
 	    buf.append(TagUtils.createSimpleTag("div", "class",
-		    this.formPresentationConfig.getAttribute(FormConfig.ATTR_ERROR_CLASS),
+		    this.formConfig.getAttribute(FormConfig.ATTR_ERROR_CLASS),
 		    errorVar));
 	} else { /* create checkbox or radio button */
-
 	    buf.append(TagUtils.createTag("label", null, label));
-	    Map<String, String> optionsData = element.getAdditionalData();
-
 	    buf.append(TagUtils.createStartTag("div", null));
-
+	    
+	    Map<String, String> optionsData = element.getAdditionalData();
 	    for (String value : optionsData.keySet()) {
 
 		attrs.put(FormElement.VALUE_ATTR_NAME, value);
@@ -193,9 +185,10 @@ public class JspFormGenerator implements IFormGenerator {
 		/* inject El conditional for "checked" */
 		buf.append(this.injectConditionalSelection(value, elemAttrName,
 			startTag, "checked"));
+
 		buf.append(TagUtils.createTag("span", null,
 			optionsData.get(value))
-			+ "\n"); /* selection label */
+			+ "\n");
 
 		buf.append(TagUtils.createEndTag(name));
 		/*
@@ -212,35 +205,37 @@ public class JspFormGenerator implements IFormGenerator {
     /*
      * Create text area.
      */
-    private void createTextareaTag(IFormElement element, StringBuffer buf) {
+    private void createTextareaTag(IFormElement element, StringBuilder buf) {
 	String elemName = element.getName();
 	String label = element.getLabel();
 	String elemNameAttr = element.getAttribute(FormElement.NAME_ATTR_NAME);
+	
 	buf.append(TagUtils.createTag("label", null, label));
-	buf.append(TagUtils.createTag(elemName, element.getAttributes(), this
-		.getElVar(this.formPresentationConfig
-			.getAttribute(FormConfig.ATTR_VALUES_MAP_VAR_NAME),
-			elemNameAttr)));
+	
+	String elVar = this.getElVar(this.formConfig
+		.getAttribute(FormConfig.ATTR_VALUES_MAP_VAR_NAME),
+		elemNameAttr);
+	buf.append(TagUtils.createTag(elemName, element.getAttributes(), elVar));
 
-	String errorVar = this.getElVar(this.formPresentationConfig
+	String errorVar = this.getElVar(this.formConfig
 		.getAttribute(FormConfig.ATTR_ERRORS_MAP_VAR_NAME),
 		elemNameAttr);
 	buf.append(TagUtils.createSimpleTag("div", "class",
-		this.formPresentationConfig
-			.getAttribute(FormConfig.ATTR_ERROR_CLASS), errorVar));
+		this.formConfig.getAttribute(FormConfig.ATTR_ERROR_CLASS),
+		errorVar));
     }
 
     /*
      * Create select tag.
      */
-    private void createSelectTag(IFormElement element, StringBuffer buf) {
+    private void createSelectTag(IFormElement element, StringBuilder buf) {
 	String elemName = element.getName();
 	String elemlabel = element.getLabel();
 	String elemAttrName = element.getAttribute(FormElement.NAME_ATTR_NAME);
 	Map<String, String> options = element.getAdditionalData();
 
 	Map<String, String> attrs = new HashMap<String, String>();
-	StringBuffer optionsBuf = new StringBuffer();
+	StringBuilder optionsBuf = new StringBuilder();
 	for (String value : options.keySet()) {
 	    optionsBuf.append("\n");
 	    String label = options.get(value);
@@ -251,6 +246,7 @@ public class JspFormGenerator implements IFormGenerator {
 	    optionsBuf.append(this.injectConditionalSelection(value,
 		    elemAttrName, openOptionTag, "selected"));
 	    optionsBuf.append(TagUtils.createTag("span", null, label));
+
 	    optionsBuf.append(TagUtils.createEndTag("option"));
 	}
 
@@ -271,7 +267,7 @@ public class JspFormGenerator implements IFormGenerator {
      */
     private String injectConditionalSelection(String valueToCompare,
 	    String mapVarName, String tag, String selectionKeyWord) {
-	String pageScopeVar = this.formPresentationConfig
+	String valueMap = this.formConfig
 		.getAttribute(FormConfig.ATTR_VALUES_MAP_VAR_NAME)
 		+ "[\""
 		+ mapVarName + "\"]";
@@ -280,7 +276,7 @@ public class JspFormGenerator implements IFormGenerator {
 
 	String conditionalSelection = String.format(
 		" ${(%2$s.contains('%1$s')) ? \"%3$s\" : ''}", valueToCompare,
-		pageScopeVar, selectionKeyWord);
+		valueMap, selectionKeyWord);
 	openTagPart = openTagPart.concat(conditionalSelection);
 	return (openTagPart + ">");
     }

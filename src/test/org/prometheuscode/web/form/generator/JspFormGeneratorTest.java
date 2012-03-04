@@ -84,6 +84,11 @@ public class JspFormGeneratorTest {
 
 	comp.addElement(elemRadio);
 
+	IFormElement submit = new FormElement();
+	submit.setName("input");
+	submit.addAttribute("type", "submit");
+	submit.addAttribute("value", "submit");
+	comp.addElement(submit);
 	
 	this.testForm = form;
     }

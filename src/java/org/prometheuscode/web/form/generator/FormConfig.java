@@ -48,8 +48,6 @@ public class FormConfig {
 
     public final static String ATTR_ERRORS_MAP_VAR_NAME = "error_name";
 
-    public final static String ATTR_SUBMIT_LABEL = "submit_label";
-
     
     private String defaultComponentClassName = "_form_component";
 
@@ -63,7 +61,6 @@ public class FormConfig {
 
     private String defaultErrorsMapVariable = "errors";
 
-    private String defaultSubmitLabel = "submit";
 
     
     private Map<String, String> formConfiguration = new HashMap<String, String>();
@@ -80,7 +77,6 @@ public class FormConfig {
 		defaultValuesMapVariable);
 	this.formConfiguration.put(ATTR_ERRORS_MAP_VAR_NAME,
 		defaultErrorsMapVariable);
-	this.formConfiguration.put(ATTR_SUBMIT_LABEL, this.defaultSubmitLabel);
     }
 
     /**

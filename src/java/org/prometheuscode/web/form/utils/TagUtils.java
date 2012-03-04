@@ -83,7 +83,9 @@ public class TagUtils {
 	tag.append(TagUtils.createOpenTag(tagName, attrs));
 	tag.append(content);
 
-	tag.append("</" + tagName + ">");
+	tag.append("</");
+	tag.append(tagName);
+	tag.append(">");
 
 	return tag.toString();
     }
@@ -104,14 +106,20 @@ public class TagUtils {
     private static String createOpenTag(String tagName,
 	    Map<String, String> attrs) {
 	StringBuilder tag = new StringBuilder();
-	tag.append("<" + tagName);
+	tag.append("<");
+	tag.append(tagName);
 
 	if (attrs != null) {
 	    Set<Entry<String, String>> entries = attrs.entrySet();
 	    for (Entry<String, String> entry : entries) {
 		String key = entry.getKey();
 		String value = entry.getValue();
-		tag.append(" " + key + "=" + "\"" + value + "\"");
+		tag.append(" ");
+		tag.append(key);
+		tag.append("=");
+		tag.append("\"");
+		tag.append(value);
+		tag.append("\"");
 	    }
 	}
 
